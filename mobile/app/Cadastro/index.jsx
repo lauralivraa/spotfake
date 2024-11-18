@@ -11,7 +11,7 @@ const Cadastro = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      window.alert('ERRO: As senhas não coincidem');
+      alert('ERRO: As senhas não coincidem');
       return;
     }
 
@@ -20,28 +20,28 @@ const Cadastro = ({ navigation }) => {
         method: 'POST',
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           nome: firstName,
           sobrenome: lastName,
           dataNascimento: birthDate,
           email: email,
-          senha: password
-        })
+          senha: password,
+        }),
       });
 
       if (response.status === 400) {
-        window.alert('ERRO: Usuário já cadastrado!');
+        alert('ERRO: Usuário já cadastrado!');
       } else if (response.status === 406) {
-        window.alert('ERRO: Preencha todos os campos!');
+        alert('ERRO: Preencha todos os campos!');
       } else if (response.status === 201) {
         navigation.navigate('Home');
       } else {
-        window.alert('ERRO: Ocorreu um erro inesperado');
+        alert('ERRO: Ocorreu um erro inesperado');
       }
     } catch (error) {
-      window.alert('ERRO: Não foi possível conectar ao servidor');
+      alert('ERRO: Não foi possível conectar ao servidor');
     }
   };
 
@@ -52,21 +52,21 @@ const Cadastro = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Nome"
-          placeholderTextColor="#888"
+          placeholderTextColor="#9c88d1"
           value={firstName}
           onChangeText={setFirstName}
         />
         <TextInput
           style={styles.input}
           placeholder="Sobrenome"
-          placeholderTextColor="#888"
+          placeholderTextColor="#9c88d1"
           value={lastName}
           onChangeText={setLastName}
         />
         <TextInput
           style={styles.input}
           placeholder="Data de Nascimento (DD/MM/AAAA)"
-          placeholderTextColor="#888"
+          placeholderTextColor="#9c88d1"
           keyboardType="numeric"
           value={birthDate}
           onChangeText={setBirthDate}
@@ -74,7 +74,7 @@ const Cadastro = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#888"
+          placeholderTextColor="#9c88d1"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
@@ -82,7 +82,7 @@ const Cadastro = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Senha"
-          placeholderTextColor="#888"
+          placeholderTextColor="#9c88d1"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -90,7 +90,7 @@ const Cadastro = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Confirmar Senha"
-          placeholderTextColor="#888"
+          placeholderTextColor="#9c88d1"
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
@@ -111,14 +111,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fce4ec',
+    backgroundColor: '#f8f4ff',
   },
   container: {
     width: '90%',
     maxWidth: 400,
     padding: 24,
-    borderRadius: 8,
-    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    backgroundColor: '#dcd6f7', 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -127,37 +127,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#d81b60',
+    color: '#6b4fd8', 
     marginBottom: 24,
   },
   input: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#f8bbd0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    height: 40,
+    backgroundColor: '#ebe6ff', 
+    borderRadius: 6,
+    paddingHorizontal: 10,
     marginBottom: 16,
-    color: '#000',
+    color: '#6b4fd8', 
+    borderColor: '#dcd6f7',
+    borderWidth: 1,
   },
   button: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#d81b60',
-    borderRadius: 8,
+    height: 40,
+    backgroundColor: '#9c88d1', 
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   buttonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#ffffff',
   },
   loginText: {
-    fontSize: 16,
-    color: '#d81b60',
+    fontSize: 14,
+    color: '#6b4fd8',
   },
 });
 
