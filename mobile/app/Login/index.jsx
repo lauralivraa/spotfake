@@ -7,7 +7,7 @@ const Login = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://localhost:8000/login', {
+      const response = await fetch('http://localhost:8000/autenticacao/login', {
         method: 'POST',
         headers: {
           Accept: 'application/json',

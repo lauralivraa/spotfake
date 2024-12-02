@@ -16,7 +16,7 @@ const Cadastro = ({ navigation }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/registro', {
+      const response = await fetch('http://localhost:8000/autenticacaoregistro', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
