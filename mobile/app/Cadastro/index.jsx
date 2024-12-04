@@ -16,7 +16,7 @@ const Cadastro = ({ navigation }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/autenticacaoregistro', {
+      const response = await fetch('http://localhost:8000/autenticacao/registro', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -35,7 +35,7 @@ const Cadastro = ({ navigation }) => {
         alert('ERRO: Usuário já cadastrado!');
       } else if (response.status === 406) {
         alert('ERRO: Preencha todos os campos!');
-      } else if (response.status === 201) {
+      } else if (response.status === 200) {
         navigation.navigate('Home');
       } else {
         alert('ERRO: Ocorreu um erro inesperado');

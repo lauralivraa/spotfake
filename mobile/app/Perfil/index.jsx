@@ -1,241 +1,274 @@
 import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Image, SafeAreaView, TextInput, Alert, TouchableOpacity, Modal } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, TextInput, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {vh, vw} from 'react-native-css-vh-vw'
 
-const ProfileScreen = ({ navigation }) => {
-  const [image, setImage] = useState(null);
-  const [email, setEmail] = useState('')
+export default function Perfil() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const getImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      handleSetImage(result.assets[0].uri)
-    }
-  };
-
-  const handleSetImage = async (url) => {
+  const handleSendImage = async (imageUri) => {
     try {
       const data = {
-        "file": url,
-        "upload_preset": 'ml_default',
+        file: imageUri,
+        upload_preset: 'ml_default',
       };
-      const res = await fetch('https://api.cloudinary.com/v1_1/dtrobjlkz/upload', {
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/deq6egrbf/upload', {
         method: 'POST',
         headers: {
-          'content-type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
+
+      if (!res.ok) {
+        throw new Error(`Erro ${res.status}: ${res.statusText}`);
+      }
+
       const result = await res.json();
-      console.log(result.url)
-    } catch (error) {
-      console.err(error);
-    }
-  };
-
-  const toggleModal = () => {
-    setIsModalVisible(!isModalVisible);
-  };
-
-  const handlePasswordChange = async () => {
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem!');
-      return;
-    }
-    try {
-      const resposta = await fetch(`http://localhost:8000/autenticacao/${email}/nova_senha`, {
-        method: 'PUT',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ senha: newPassword })
-      });
-      toggleModal();
-    } catch (error) {
-      console.error('ERROR:', error)
+      setProfileImage(result.url);
+      console.log(result)
+    } catch (e) {
+      console.error('Erro ao enviar imagem:', e);
+      Alert.alert('Erro', 'Não foi possível enviar a imagem.');
     }
     
   };
 
-  const getData = async () => {
+  const fetchUserData = async () => {
     try {
-      const value = await AsyncStorage.getItem('email');
-      if (value !== null) {
-        setEmail(value)
+      const response = await fetch('http://192.168.0.100:8000/get.users', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
-    } catch (e) {
-      console.log(e)
+
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Resposta não é JSON');
+      }
+
+      const userData = await response.json();
+      setName(userData.name);
+      setEmail(userData.email);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      Alert.alert('Erro', 'Erro ao conectar ao servidor.');
+    }
+  };
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      Alert.alert('Permissão necessária', 'Permita o acesso à galeria para selecionar uma imagem.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+      handleSendImage(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = () => {
+    setIsEditing(false);
+    Alert.alert('Perfil atualizado', 'Suas alterações foram salvas.');
+  };
+
+  const handleChangePassword = () => {
+    if (newPassword === confirmPassword) {
+      Alert.alert('Sucesso', 'Senha alterada com sucesso!');
+      setIsModalVisible(false);
+    } else {
+      Alert.alert('Erro', 'As senhas não coincidem.');
     }
   };
 
   useEffect(() => {
-    getData()
-  }, [])
+    fetchUserData();
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Perfil do Usuário</Text>
-      <TouchableOpacity onPress={getImage} style={styles.avatarContainer}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>Foto</Text>
+    <View style={styles.mainContainer}>
+      <View style={styles.profileBox}>
+        <View style={styles.paddingContainer}>
+          <View style={styles.profileHeaderContainer}>
+            <TouchableOpacity onPress={pickImage}>
+              <Image
+                source={profileImage ? { uri: profileImage } : require('../../assets/images/logo.png')}
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
+            {isEditing ? (
+              <TextInput
+                style={styles.editNameInput}
+                value={name}
+                onChangeText={(text) => setName(text)}
+              />
+            ) : (
+              <Text style={styles.userName}>{name}</Text>
+            )}
+            <Text style={styles.userEmail}>{email}</Text>
           </View>
-        )}
-      </TouchableOpacity>
-      <Text style={styles.username}>Vitor Mainchein</Text>
-      <Text style={styles.email}>vitor@gmail.com</Text>
 
-      <TouchableOpacity style={styles.button} onPress={getImage}>
-        <Text style={styles.buttonText}>Editar Perfil</Text>
-      </TouchableOpacity>
+          <TouchableOpacity onPress={isEditing ? handleSave : () => setIsEditing(true)} style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>{isEditing ? 'Salvar' : 'Editar Perfil'}</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={toggleModal}>
-        <Text style={styles.buttonText}>Alterar Senha</Text>
-      </TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsModalVisible(true)} style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>Trocar Senha</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.buttonText}>Sair</Text>
-      </TouchableOpacity>
-
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={toggleModal}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Alterar Senha</Text>
+      <Modal visible={isModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContentBox}>
+            <Text style={styles.modalTitle}>Trocar Senha</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Nova Senha"
+              style={styles.passwordInput}
+              placeholder="Nova senha"
               secureTextEntry
               value={newPassword}
               onChangeText={setNewPassword}
             />
             <TextInput
-              style={styles.input}
-              placeholder="Confirmar Senha"
+              style={styles.passwordInput}
+              placeholder="Confirmar nova senha"
               secureTextEntry
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
-            <TouchableOpacity style={styles.modalButton} onPress={handlePasswordChange}>
-              <Text style={styles.buttonText}>Alterar Senha</Text>
+            <TouchableOpacity onPress={handleChangePassword} style={styles.actionButton}>
+              <Text style={styles.actionButtonText}>Confirmar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={toggleModal}>
-              <Text style={styles.buttonText}>Cancelar</Text>
+            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.actionButton}>
+              <Text style={styles.actionButtonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#121212',
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#00bcd4',
-    marginVertical: 16,
-  },
-  avatarContainer: {
-    marginVertical: 16,
-  },
-  avatar: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderColor: '#00bcd4',
-    borderWidth: 2,
-  },
-  avatarText: {
-    color: '#888',
-    fontSize: 14,
-  },
-  username: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#00bcd4',
-    marginTop: 8,
-  },
-  email: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 24,
-  },
-  button: {
-    width: '80%',
-    paddingVertical: 12,
-    backgroundColor: '#00bcd4',
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
-  // Estilos da Modal
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#00bcd4',
-    marginBottom: 16,
-  },
-  input: {
-    width: '100%',
-    padding: 12,
-    marginVertical: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  modalButton: {
-    width: '80%',
-    paddingVertical: 12,
-    backgroundColor: '#00bcd4',
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-});
-
-export default ProfileScreen;
+    mainContainer: {
+      flex: 1,
+      backgroundColor: '#f8f4ff',
+      paddingHorizontal: 15, 
+      paddingTop: 20,
+      justifyContent: 'center',
+      width: vw(100)
+    },
+    profileBox: {
+      backgroundColor: '#dcd6f7',
+      marginHorizontal: 20, 
+      borderRadius: 10,
+      padding: 15,
+    },
+    paddingContainer: {
+      margin: 10,
+    },
+    profileHeaderContainer: {
+      alignItems: 'center',
+      marginBottom: 20, 
+    },
+    profileImage: {
+      width: 100, 
+      height: 100,
+      borderRadius: 50,
+      marginBottom: 10,
+    },
+    userName: {
+      fontSize: 24, 
+      fontWeight: 'bold',
+      color: '#6b4fde',
+      textAlign: 'center', 
+    },
+    editNameInput: {
+      fontSize: 24, 
+      fontWeight: 'bold',
+      color: 'white',
+      borderBottomWidth: 1,
+      borderBottomColor: 'gray',
+      marginBottom: 10,
+      textAlign: 'center', 
+    },
+    userEmail: {
+      fontSize: 14, 
+      color: 'gray',
+      textAlign: 'center', 
+    },
+    actionButton: {
+      backgroundColor: '#9c88d1',
+      paddingVertical: 12,
+      paddingHorizontal: 25,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginTop: 20,
+    },
+    actionButtonText: {
+      fontSize: 16,
+      color: 'white',
+      fontWeight: 'bold',
+    },
+    modalBackground: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContentBox: {
+      backgroundColor: 'white',
+      padding: 20,
+      borderRadius: 15,
+      width: '80%',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    passwordInput: {
+      borderWidth: 1,
+      borderColor: 'gray',
+      borderRadius: 5,
+      padding: 12, 
+      marginBottom: 15,
+      fontSize: 16,
+    },
+    modalButton: {
+      backgroundColor: '#9c88d1',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    modalButtonText: {
+      fontSize: 16,
+      color: 'white',
+      fontWeight: 'bold',
+    },
+  });
+  
